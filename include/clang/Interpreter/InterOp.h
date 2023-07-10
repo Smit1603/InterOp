@@ -453,6 +453,12 @@ namespace InterOp {
 
   /// Loads the library based on the path returned by the LookupLibrary()
   /// function.
+  
+  
+  
+  
+  
+  
   bool LoadLibrary(const char *lib_path, bool lookup = true);
 
   /// Tries to load provided objects in a string format (prettyprint).
