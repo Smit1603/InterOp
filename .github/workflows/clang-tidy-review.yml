@@ -1,7 +1,7 @@
 name: clang-tidy-review
 
 on: 
-  pull_requests:
+  pull_request:
     paths:
       - '**.h'
       - '**.cpp'
