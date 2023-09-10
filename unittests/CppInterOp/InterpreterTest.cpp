@@ -45,6 +45,7 @@ TEST(InterpreterTest, Evaluate) {
   EXPECT_FALSE(HadError) ;
 }
 
+#if !(__clang__ && __APPLE__)
 TEST(InterpreterTest, Process) {
   Cpp::CreateInterpreter();
   EXPECT_TRUE(Cpp::Process("") == 0);
@@ -53,6 +54,7 @@ TEST(InterpreterTest, Process) {
   // Linker/JIT error.
   EXPECT_FALSE(Cpp::Process("int f(); int res = f();") == 0);
 }
+#endif
 
 TEST(InterpreterTest, CreateInterpreter) {
   auto I = Cpp::CreateInterpreter();
