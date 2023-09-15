@@ -61,7 +61,7 @@ jobs:
             cling: On
             cppyy: Off
 
-          - name: osx-clang-clang13-cling
+          - name: osx-clang-clang13-cling-cppyy
             os: macos-latest
             compiler: clang
             clang-runtime: '13'
@@ -312,7 +312,7 @@ jobs:
         echo "CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH" >> $GITHUB_ENV
 
     - name: Build and Install cppyy-backend on Linux
-      if: ${{ (runner.os == 'Linux') && (matrix.cppyy == 'On') }}
+      if: ${{ (runner.os != 'windows') && (matrix.cppyy == 'On') }}
       run: |
         # Download cppyy-backend
         git clone https://github.com/compiler-research/cppyy-backend.git
@@ -331,7 +331,7 @@ jobs:
         #
         cd ..
     - name: Install CPyCppyy on Linux
-      if: ${{ (runner.os == 'Linux') && (matrix.cppyy == 'On') }}
+      if: ${{ (runner.os != 'windows') && (matrix.cppyy == 'On') }}
       run: |
         # Setup virtual environment
         python3 -m venv .venv
@@ -348,7 +348,7 @@ jobs:
         # We need CPYCPPYY_DIR later
         echo "CPYCPPYY_DIR=$CPYCPPYY_DIR" >> $GITHUB_ENV
     - name: Install cppyy on Linux
-      if: ${{ (runner.os == 'Linux') && (matrix.cppyy == 'On') }}
+      if: ${{ (runner.os != 'windows') && (matrix.cppyy == 'On') }}
       run: |
         # source virtual environment
         source .venv/bin/activate
@@ -358,7 +358,7 @@ jobs:
         python -m pip install --upgrade . --no-deps
         cd ..
     - name: Run cppyy on Linux
-      if: ${{ (runner.os == 'Linux') && (matrix.cppyy == 'On') }}
+      if: ${{ (runner.os != 'windows') && (matrix.cppyy == 'On') }}
       run: |
         # Run cppyy
         source .venv/bin/activate
@@ -368,7 +368,7 @@ jobs:
         echo "PYTHONPATH=$PYTHONPATH" >> $GITHUB_ENV
     - name: Run the tests on Linux
       continue-on-error: true
-      if: ${{ (runner.os == 'Linux') && (matrix.cppyy == 'On') }}
+      if: ${{ (runner.os != 'windows') && (matrix.cppyy == 'On') }}
       run: |
         # Run the tests
         source .venv/bin/activate
