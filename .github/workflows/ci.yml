@@ -21,59 +21,45 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - name: ubu22-gcc12-clang-repl-17
-          #   os: ubuntu-latest
-          #   compiler: gcc-12
-          #   clang-runtime: '17'
-          #   cling: Off
-          #   cppyy: Off
-          #   extra_cmake_options: '-DLLVM_USE_LINKER=lld'
-
-          # - name: ubu22-gcc9-clang-repl-16
-          #   os: ubuntu-22.04
-          #   compiler: gcc-9
-          #   clang-runtime: '16'
-          #   cling: Off
-          #   cppyy: Off
-          #   coverage: true
-          #   extra_cmake_options: '-DLLVM_USE_LINKER=lld'
-
-          # - name: ubu22-gcc9-clang13-cling
-          #   os: ubuntu-22.04
-          #   compiler: gcc-9
-          #   clang-runtime: '13'
-          #   cling: On
-          #   cppyy: Off
-          #   extra_cmake_options: '-DLLVM_USE_LINKER=lld'
-
-          # - name: ubu22-gcc9-clang13-cling-cppyy
-          #   os: ubuntu-22.04
-          #   compiler: gcc-9
-          #   clang-runtime: '13'
-          #   cling: On
-          #   cppyy: On
-          #   extra_cmake_options: '-DLLVM_USE_LINKER=lld'
-          
-          # - name: osx-clang-clang13-cling
-          #   os: macos-latest
-          #   compiler: clang
-          #   clang-runtime: '13'
-          #   cling: On
-          #   cppyy: Off
-          
-          - name: windows-clang-clang13-cling
-            os: windows-latest
-            compiler: msvc
-            clang-runtime: '13'
+          - name: ubu22-gcc12-clang-repl-17
+            os: ubuntu-latest
+            compiler: gcc-12
+            clang-runtime: '17'
             cling: Off
             cppyy: Off
+            extra_cmake_options: '-DLLVM_USE_LINKER=lld'
 
-          # - name: osx-clang-clang13-cling-cppyy
-          #   os: macos-latest
-          #   compiler: clang
-          #   clang-runtime: '13'
-          #   cling: On
-          #   cppyy: On
+          - name: ubu22-gcc9-clang-repl-16
+            os: ubuntu-22.04
+            compiler: gcc-9
+            clang-runtime: '16'
+            cling: Off
+            cppyy: Off
+            coverage: true
+            extra_cmake_options: '-DLLVM_USE_LINKER=lld'
+
+          - name: ubu22-gcc9-clang13-cling
+            os: ubuntu-22.04
+            compiler: gcc-9
+            clang-runtime: '13'
+            cling: On
+            cppyy: Off
+            extra_cmake_options: '-DLLVM_USE_LINKER=lld'
+
+          - name: ubu22-gcc9-clang13-cling-cppyy
+            os: ubuntu-22.04
+            compiler: gcc-9
+            clang-runtime: '13'
+            cling: On
+            cppyy: On
+            extra_cmake_options: '-DLLVM_USE_LINKER=lld'
+          
+          - name: osx-clang-clang13-cling
+            os: macos-latest
+            compiler: clang
+            clang-runtime: '13'
+            cling: On
+            cppyy: Off
 
     steps:
     - uses: actions/checkout@v3
@@ -103,48 +89,11 @@ jobs:
         echo "LLVM_HASH=$LLVM_HASH" >> $GITHUB_ENV
     - uses: nelonoel/branch-name@v1.0.1
 
-    - name: Save PR Info
-      if: runner.os == 'windows'
-      run: |
-        mkdir -p ./pr
-        echo ${{ github.event.number }} > ./pr/NR
-        echo ${{ github.repository }} > ./pr/REPO
-
-        setlocal enabledelayedexpansion
-        for /f %%i in ("%matrix.cling%") do (
-          set "cling_on=%%i"
-        )
-
-        if /i "!cling_on!"=="ON" (
-          for /f %%A in ('git ls-remote https://github.com/root-project/cling.git HEAD') do (
-            set "CLING_HASH=%%A"
-            set "CLING_HASH=!CLING_HASH:	=-!"
-          )
-        ) else (
-          set "CLING_HASH=Repl"
-        )
-        # FIXME: We need something like cling-llvm to bump automatically...
-        for /f %%B in ('git ls-remote https://github.com/root-project/llvm-project.git cling-llvm%matrix.clang-runtime%') do (
-          set "LLVM_HASH=%%B"
-          set "LLVM_HASH=!LLVM_HASH:	=-!"
-        )
-        echo "CLING_HASH=$CLING_HASH" >> $GITHUB_ENV
-        echo "LLVM_HASH=$LLVM_HASH" >> $GITHUB_ENV
-    - uses: nelonoel/branch-name@v1.0.1
-
     - name: Setup default Build Type on *nux
       if: runner.os != 'windows'
       run: |
         echo "BUILD_TYPE=Release" >> $GITHUB_ENV
         echo "CODE_COVERAGE=0" >> $GITHUB_ENV
-
-    - name: Setup default Build Type on Windows
-      if: runner.os == 'windows'
-      run: |
-        $env:BUILD_TYPE="Release"
-        $env:CODE_COVERAGE="0"
-        echo "BUILD_TYPE=Release" >> $env:GITHUB_ENV
-        echo "CODE_COVERAGE=0" >> $env:GITHUB_ENV
 
     - name: Setup compiler on Linux
       if: runner.os == 'Linux'
@@ -190,7 +139,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         # Install deps
-        ##sudo apt update
+        sudo apt-get update
         sudo apt install git g++ debhelper devscripts gnupg python3 valgrind
         conda install -y -q -c conda-forge \
           distro \
