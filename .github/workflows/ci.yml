@@ -54,19 +54,26 @@ jobs:
           #   cppyy: On
           #   extra_cmake_options: '-DLLVM_USE_LINKER=lld'
           
-          - name: osx-clang-clang13-cling
-            os: macos-latest
-            compiler: clang
+          # - name: osx-clang-clang13-cling
+          #   os: macos-latest
+          #   compiler: clang
+          #   clang-runtime: '13'
+          #   cling: On
+          #   cppyy: Off
+          
+          - name: windows-clang-clang13-cling
+            os: windows-latest
+            compiler: msvc
             clang-runtime: '13'
-            cling: On
+            cling: Off
             cppyy: Off
 
-          - name: osx-clang-clang13-cling-cppyy
-            os: macos-latest
-            compiler: clang
-            clang-runtime: '13'
-            cling: On
-            cppyy: On
+          # - name: osx-clang-clang13-cling-cppyy
+          #   os: macos-latest
+          #   compiler: clang
+          #   clang-runtime: '13'
+          #   cling: On
+          #   cppyy: On
 
     steps:
     - uses: actions/checkout@v3
@@ -100,6 +107,13 @@ jobs:
       run: |
         echo "BUILD_TYPE=Release" >> $GITHUB_ENV
         echo "CODE_COVERAGE=0" >> $GITHUB_ENV
+
+    - name: See windows tools required further
+      if: runner.os == 'windows'
+      run: |
+        echo "BUILD_TYPE=Release" >> $GITHUB_ENV
+        echo "CODE_COVERAGE=0" >> $GITHUB_ENV
+        winget --version
 
     - name: Setup compiler on Linux
       if: runner.os == 'Linux'
