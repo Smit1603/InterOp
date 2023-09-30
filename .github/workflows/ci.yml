@@ -248,6 +248,7 @@ jobs:
     - name: Build LLVM/Cling on Windows if the cache is invalid
       if: runner.os == 'windows' && steps.cache.outputs.cache-hit != 'true'
       run: |
+        call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         $cling_on = "${{ matrix.cling }}"
         $clang_runtime = "${{ matrix.clang-runtime }}"
 
@@ -255,7 +256,7 @@ jobs:
             git clone --depth 1 https://github.com/root-project/cling.git
             git clone --depth 1 -b cling-llvm$clang_runtime https://github.com/root-project/llvm-project.git
         } else {
-            git clone --depth 1 --config core.autocrlf=false -b release/$clang_runtime.x https://github.com/llvm/llvm-project.git
+            git clone --config core.autocrlf=false --depth 1 -b release/$clang_runtime.x https://github.com/llvm/llvm-project.git
         }
         
         cd llvm-project
@@ -278,7 +279,8 @@ jobs:
         cd build
 
         if ($cling_on.ToUpper() -eq "ON") {
-            cmake -DLLVM_ENABLE_PROJECTS=clang                    \
+            cmake -G "Visual Studio 17 2022"
+                  -DLLVM_ENABLE_PROJECTS=clang                    \
                   -DLLVM_EXTERNAL_PROJECTS=cling                  \
                   -DLLVM_EXTERNAL_CLING_SOURCE_DIR=../../cling    \
                   -DLLVM_TARGETS_TO_BUILD="host;NVPTX"            \
@@ -296,7 +298,7 @@ jobs:
             # Now build gtest.a and gtest_main for CppInterOp to run its tests.
             cmake --build . --target gtest_main --parallel ($env:NUMBER_OF_PROCESSORS)
         } else {
-            cmake -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD="host;NVPTX" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_USE_LINKER=lld -DCLANG_ENABLE_STATIC_ANALYZER=OFF -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_FORMAT=OFF -DCLANG_ENABLE_BOOTSTRAP=OFF ../llvm
+            cmake -G "Visual Studio 17 2022" -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD="host;NVPTX" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_USE_LINKER=lld -DCLANG_ENABLE_STATIC_ANALYZER=OFF -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_FORMAT=OFF -DCLANG_ENABLE_BOOTSTRAP=OFF ../llvm
 
             cmake --build . --target clang clang-repl --parallel ($env:NUMBER_OF_PROCESSORS)
         }
