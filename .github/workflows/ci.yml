@@ -244,66 +244,68 @@ jobs:
           cmake --build . --target clang clang-repl --parallel $(nproc --all)
         fi
         cd ../../
-
-    - name: Build LLVM/Cling on Windows if the cache is invalid
-      if: runner.os == 'windows' && steps.cache.outputs.cache-hit != 'true'
+    - name: Set up Visual Studio environment
+      if: runner.os=='windows'
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        echo "cling_on=%env.cling_on%"
-        echo "clang_runtime=%env.clang_runtime%"
 
-        if /i "%cling_on%"=="ON" (
-            git clone --depth 1 https://github.com/root-project/cling.git
-            git clone --depth 1 -b cling-llvm%env.clang_runtime% https://github.com/root-project/llvm-project.git
-        ) else (
-            git clone --config core.autocrlf=false --depth 1 -b release/%env.clang_runtime%.x https://github.com/llvm/llvm-project.git
-        )
+    - name: Clone LLVM and Clang repositories
+      if: runner.os=='windows'
+      run: |
+        $cling_on = "${{ matrix.cling }}"
+        $clang_runtime = "${{ matrix.clang-runtime }}"
+        
+        if ($cling_on.ToUpper() -eq "ON") {
+          git clone --depth 1 https://github.com/root-project/cling.git
+          git clone --depth 1 -b cling-llvm$clang_runtime https://github.com/root-project/llvm-project.git
+        } else {
+          git clone --config core.autocrlf=false --depth 1 -b release/$clang_runtime.x https://github.com/llvm/llvm-project.git
+        }
 
         cd llvm-project
 
-        rem Apply patches
-        set "patch_dir=..\patches\llvm"
-        set "patch_pattern=clang%env.clang_runtime%-*.patch"
+        # Apply patches
+        $patch_dir = "../patches/llvm"
+        $patch_pattern = "clang$clang_runtime-*.patch"
 
-        rem Find patch files
-        for %%F in (%patch_dir%\%patch_pattern%) do (
-            echo Applying patch: %%~fF
-            git apply %%~fF
-        )
+        # Find patch files
+        $patch_files = Get-ChildItem -Path $patch_dir -Filter $patch_pattern -File
 
-        rem Build
+        # Loop through and apply patches
+        foreach ($patch_file in $patch_files) {
+            echo "Applying patch: $($patch_file.FullName)"
+            git apply $patch_file.FullName
+        }
+
+        # Build
         mkdir build
         cd build
 
-        if /i "%cling_on%"=="ON" (
-            cmake -G "Visual Studio 17 2022" ^
-                  -DLLVM_ENABLE_PROJECTS=clang ^
-                  -DLLVM_EXTERNAL_PROJECTS=cling ^
-                  -DLLVM_EXTERNAL_CLING_SOURCE_DIR=../../cling ^
-                  -DLLVM_TARGETS_TO_BUILD="host;NVPTX" ^
-                  -DCMAKE_BUILD_TYPE=Release ^
-                  -DLLVM_ENABLE_ASSERTIONS=ON ^
-                  -DLLVM_USE_LINKER=lld ^
-                  -DCLANG_ENABLE_STATIC_ANALYZER=OFF ^
-                  -DCLANG_ENABLE_ARCMT=OFF ^
-                  -DCLANG_ENABLE_FORMAT=OFF ^
-                  -DCLANG_ENABLE_BOOTSTRAP=OFF ^
+        if ($cling_on.ToUpper() -eq "ON") {
+            cmake -G "Visual Studio 17 2022"
+                  -DLLVM_ENABLE_PROJECTS=clang                    \
+                  -DLLVM_EXTERNAL_PROJECTS=cling                  \
+                  -DLLVM_EXTERNAL_CLING_SOURCE_DIR=../../cling    \
+                  -DLLVM_TARGETS_TO_BUILD="host;NVPTX"            \
+                  -DCMAKE_BUILD_TYPE=Release                      \
+                  -DLLVM_ENABLE_ASSERTIONS=ON                     \
+                  -DLLVM_USE_LINKER=lld                           \
+                  -DCLANG_ENABLE_STATIC_ANALYZER=OFF              \
+                  -DCLANG_ENABLE_ARCMT=OFF                        \
+                  -DCLANG_ENABLE_FORMAT=OFF                       \
+                  -DCLANG_ENABLE_BOOTSTRAP=OFF                    \
                   ../llvm
 
-            cmake --build . --target clang --parallel %NUMBER_OF_PROCESSORS%
-            cmake --build . --target cling --parallel %NUMBER_OF_PROCESSORS%
-            rem Now build gtest.a and gtest_main for CppInterOp to run its tests.
-            cmake --build . --target gtest_main --parallel %NUMBER_OF_PROCESSORS%
-        ) else (
+            cmake --build . --target clang --parallel ($env:NUMBER_OF_PROCESSORS)
+            cmake --build . --target cling --parallel ($env:NUMBER_OF_PROCESSORS)
+            # Now build gtest.a and gtest_main for CppInterOp to run its tests.
+            cmake --build . --target gtest_main --parallel ($env:NUMBER_OF_PROCESSORS)
+        } else {
             cmake -G "Visual Studio 17 2022" -DLLVM_ENABLE_PROJECTS=clang -DLLVM_TARGETS_TO_BUILD="host;NVPTX" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_USE_LINKER=lld -DCLANG_ENABLE_STATIC_ANALYZER=OFF -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_FORMAT=OFF -DCLANG_ENABLE_BOOTSTRAP=OFF ../llvm
 
-            cmake --build . --target clang clang-repl --parallel %NUMBER_OF_PROCESSORS%
-        )
-
-      env:
-        cling_on: ${{ matrix.cling }}
-        clang_runtime: ${{ matrix.clang-runtime }}
+            cmake --build . --target clang clang-repl --parallel ($env:NUMBER_OF_PROCESSORS)
+        }
 
     - name: Save Cache LLVM/Clang runtime build directory
       uses: actions/cache/save@v3
