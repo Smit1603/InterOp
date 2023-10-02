@@ -250,14 +250,12 @@ jobs:
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        # set "cling_on=%${{ matrix.cling }}%"
-        # set "clang_runtime=%${{ matrix.clang-runtime }}%"
         echo "cling_on=%env.cling_on%"
         echo "clang_runtime=%env.clang_runtime%"
 
         if /i "%cling_on%"=="ON" (
             git clone --depth 1 https://github.com/root-project/cling.git
-            git clone --depth 1 -b cling-llvm%clang_runtime% https://github.com/root-project/llvm-project.git
+            git clone --depth 1 -b cling-llvm%env.clang_runtime% https://github.com/root-project/llvm-project.git
         ) else (
             git clone --config core.autocrlf=false --depth 1 -b release/%env.clang_runtime%.x https://github.com/llvm/llvm-project.git
         )
