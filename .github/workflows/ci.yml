@@ -250,23 +250,23 @@ jobs:
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        set "cling_on=%${{ matrix.cling }}%"
-        set "clang_runtime=%${{ matrix.clang-runtime }}%"
-        echo "cling_on=%cling_on%"
-        echo "clang_runtime=%clang_runtime%"
+        # set "cling_on=%${{ matrix.cling }}%"
+        # set "clang_runtime=%${{ matrix.clang-runtime }}%"
+        echo "cling_on=%env.cling_on%"
+        echo "clang_runtime=%env.clang_runtime%"
 
         if /i "%cling_on%"=="ON" (
             git clone --depth 1 https://github.com/root-project/cling.git
             git clone --depth 1 -b cling-llvm%clang_runtime% https://github.com/root-project/llvm-project.git
         ) else (
-            git clone --config core.autocrlf=false --depth 1 -b release/%clang_runtime%.x https://github.com/llvm/llvm-project.git
+            git clone --config core.autocrlf=false --depth 1 -b release/%env.clang_runtime%.x https://github.com/llvm/llvm-project.git
         )
 
         cd llvm-project
 
         rem Apply patches
         set "patch_dir=..\patches\llvm"
-        set "patch_pattern=clang%matrix.clang-runtime%-*.patch"
+        set "patch_pattern=clang%env.clang_runtime%-*.patch"
 
         rem Find patch files
         for %%F in (%patch_dir%\%patch_pattern%) do (
@@ -304,8 +304,8 @@ jobs:
         )
 
       env:
-        matrix_cling: ${{ matrix.cling }}
-        matrix_clang_runtime: ${{ matrix.clang-runtime }}
+        cling_on: ${{ matrix.cling }}
+        clang_runtime: ${{ matrix.clang-runtime }}
 
     - name: Save Cache LLVM/Clang runtime build directory
       uses: actions/cache/save@v3
