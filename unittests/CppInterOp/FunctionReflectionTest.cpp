@@ -630,6 +630,7 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   std::string code = R"(
     int f1(int i) { return i * i; }
     int *FunctionWrapperFuncPtr(int b, float f) { return nullptr; }
+    int &FunctionWrapperFuncRef(int* b, float f) { static int j; return j; }
     )";
 
   GetAllTopLevelDecls(code, Decls);
@@ -650,6 +651,12 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   Cpp::JitCall FCI1 =
       Cpp::MakeFunctionCallable(Decls[0]);
   EXPECT_TRUE(FCI1.getKind() == Cpp::JitCall::kGenericCall);
+  Cpp::JitCall FCI11 = 
+      Cpp::MakeFunctionCallable(Decls[1]);
+  EXPECT_TRUE(FCI11.getKind() == Cpp::JitCall::kGenericCall);
+  Cpp::JitCall FCI12 = 
+      Cpp::MakeFunctionCallable(Decls[2]);
+  EXPECT_TRUE(FCI12.getKind() == Cpp::JitCall::kGenericCall);
   Cpp::JitCall FCI2 =
       Cpp::MakeFunctionCallable(Cpp::GetNamed("f2"));
   EXPECT_TRUE(FCI2.getKind() == Cpp::JitCall::kGenericCall);
@@ -659,16 +666,14 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   Cpp::JitCall FCI4 =
       Cpp::MakeFunctionCallable(Cpp::GetNamed("f4", Cpp::GetNamed("NS")));
   EXPECT_TRUE(FCI4.getKind() == Cpp::JitCall::kGenericCall);
-  Cpp::JitCall FCI11 = Cpp::MakeFunctionCallable(Decls[1]);
-  EXPECT_TRUE(FCI11.getKind() == Cpp::JitCall::kGenericCall);
 
-  int i = 9, ret1, ret3, ret4;
-  int k = 10;
+  int i = 9, k = 10, ret1, ret3, ret4;
   float f = 6.7f;
   std::string s("Hello World!\n");
   void *args0[1] = { (void *) &i };
   void *args1[1] = { (void *) &s };
   void* args2[2] = {(void*)&k, (void*)&f};
+  void* args3[2] = {(void*)&k, (void*)&f};
 
   FCI1.Invoke(&ret1, {args0, /*args_size=*/1});
   EXPECT_EQ(ret1, i * i);
@@ -676,6 +681,11 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   int* ret6;
   FCI11.Invoke(&ret6, {args2, /*args_size=*/2});
   EXPECT_EQ(ret6, nullptr);
+
+  int ret7;
+  FCI12.Invoke(&ret7, {args3, /*args_size=*/2});
+  // FCI12.Invoke(&ret7);
+  EXPECT_TRUE(ret7 != NULL);
 
   testing::internal::CaptureStdout();
   FCI2.Invoke({args1, /*args_size=*/1});
