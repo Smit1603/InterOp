@@ -9,6 +9,7 @@
 #include "clang/AST/DeclBase.h"
 #include "clang/AST/ASTDumper.h"
 
+#include <string>
 #include "gtest/gtest.h"
 
 using namespace TestUtils;
@@ -915,4 +916,18 @@ TEST(ScopeReflectionTest, IncludeVector) {
     #include <iostream>
   )";
   Interp->process(code);
+}
+
+TEST(ScopeReflectionTest, DumpScope) {
+  Interp->declare(R"(
+    class C {
+      int x;
+    };
+    )");
+
+  testing::internal::CaptureStdout();
+  Cpp::TCppScope_t scope = Cpp::GetNamed("C");
+  Cpp::DumpScope(scope);
+  std::string output = testing::internal::GetCapturedStdout();
+  EXPECT_TRUE(output.empty());
 }
