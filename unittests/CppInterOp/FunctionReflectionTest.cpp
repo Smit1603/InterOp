@@ -629,6 +629,7 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   std::vector<Decl*> Decls;
   std::string code = R"(
     int f1(int i) { return i * i; }
+    int *FunctionWrapperFuncPtr(int b, float f) { return nullptr; }
     )";
 
   GetAllTopLevelDecls(code, Decls);
@@ -658,14 +659,23 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   Cpp::JitCall FCI4 =
       Cpp::MakeFunctionCallable(Cpp::GetNamed("f4", Cpp::GetNamed("NS")));
   EXPECT_TRUE(FCI4.getKind() == Cpp::JitCall::kGenericCall);
+  Cpp::JitCall FCI11 = Cpp::MakeFunctionCallable(Decls[1]);
+  EXPECT_TRUE(FCI11.getKind() == Cpp::JitCall::kGenericCall);
 
   int i = 9, ret1, ret3, ret4;
+  int k = 10;
+  float f = 6.7f;
   std::string s("Hello World!\n");
   void *args0[1] = { (void *) &i };
   void *args1[1] = { (void *) &s };
+  void* args2[2] = {(void*)&k, (void*)&f};
 
   FCI1.Invoke(&ret1, {args0, /*args_size=*/1});
   EXPECT_EQ(ret1, i * i);
+
+  int* ret6;
+  FCI11.Invoke(&ret6, {args2, /*args_size=*/2});
+  EXPECT_EQ(ret6, nullptr);
 
   testing::internal::CaptureStdout();
   FCI2.Invoke({args1, /*args_size=*/1});
@@ -733,6 +743,19 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
 
   FCI_Add.Invoke(&result, {args, /*args_size=*/2});
   EXPECT_EQ(result, a + b);
+
+  // std::string code1 = R"(
+  //   int *FunctionWrapperFuncPtr(int b, float f) { return nullptr; }
+  //   )";
+  // int b = 10;
+  // float f = 6.7f;
+  // void* args2[2] = {(void*)&b, (void*)&f};
+  // GetAllTopLevelDecls(code1, Decls1);
+  // Cpp::JitCall FCI11 = Cpp::MakeFunctionCallable(Decls1[0]);
+  // EXPECT_TRUE(FCI11.getKind() == Cpp::JitCall::kGenericCall);
+  // int* ret6;
+  // FCI11.Invoke(&ret6, {args2, /*args_size=*/2});
+  // EXPECT_EQ(ret6, nullptr );
 }
 
 TEST(FunctionReflectionTest, IsConstMethod) {
