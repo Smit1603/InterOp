@@ -631,6 +631,7 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
     int f1(int i) { return i * i; }
     int *FunctionWrapperFuncPtr(int b, float f) { return nullptr; }
     int &FunctionWrapperFuncRef(int* b, float f) { static int j; return j; }
+    int FunctionWrapperFuncRValueRefArg(int&& j) {return j;}
     )";
 
   GetAllTopLevelDecls(code, Decls);
@@ -657,6 +658,9 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   Cpp::JitCall FCI12 = 
       Cpp::MakeFunctionCallable(Decls[2]);
   EXPECT_TRUE(FCI12.getKind() == Cpp::JitCall::kGenericCall);
+  Cpp::JitCall FCI13 = Cpp::MakeFunctionCallable(Decls[3]);
+  EXPECT_TRUE(FCI13.getKind() == Cpp::JitCall::kGenericCall);
+
   Cpp::JitCall FCI2 =
       Cpp::MakeFunctionCallable(Cpp::GetNamed("f2"));
   EXPECT_TRUE(FCI2.getKind() == Cpp::JitCall::kGenericCall);
@@ -673,7 +677,6 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   void *args0[1] = { (void *) &i };
   void *args1[1] = { (void *) &s };
   void* args2[2] = {(void*)&k, (void*)&f};
-  void* args3[2] = {(void*)&k, (void*)&f};
 
   FCI1.Invoke(&ret1, {args0, /*args_size=*/1});
   EXPECT_EQ(ret1, i * i);
@@ -683,9 +686,12 @@ TEST(FunctionReflectionTest, GetFunctionCallWrapper) {
   EXPECT_EQ(ret6, nullptr);
 
   int ret7;
-  FCI12.Invoke(&ret7, {args3, /*args_size=*/2});
-  // FCI12.Invoke(&ret7);
+  FCI12.Invoke(&ret7, {args2, /*args_size=*/2});
   EXPECT_TRUE(ret7 != NULL);
+
+  int ret8;
+  FCI13.Invoke(&ret8,{args0, /*args_size=*/1});
+  EXPECT_EQ(ret8, i );
 
   testing::internal::CaptureStdout();
   FCI2.Invoke({args1, /*args_size=*/1});
